@@ -34,14 +34,14 @@ var apiGET = function(req, res, db) {
 		
 		// Get a colletion of posts. It should be filtered and sorted by the data received.
 		// The response should have: 
-		//     sort (default date), order default(1 ascending), limit (default 9, max 100), start (default 0), end (default last post date)
+		//     sort (default time), order default(1 ascending), limit (default 9, max 100), start (default 0), end (default last post date)
 		
 		var urlQuery = url.parse(req.url, true).query;
 		if (urlQuery.tags)
 			urlQuery.tags = urlQuery.tags.toUpperCase().split(",");
 		
-		var sort = (urlQuery.sort || "date").toLowerCase();
-		var order = +urlQuery.order || 1;
+		var sort = (urlQuery.sort || "time").toLowerCase();
+		var order = +((urlQuery.order.match("-?[1]") || [1])[0]);
 		var limit = +urlQuery.limit || 9;
 		var start = +urlQuery.start || 0;
 		var end = +urlQuery.end || new Date().getTime();
