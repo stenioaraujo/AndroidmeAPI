@@ -1,6 +1,6 @@
 var expect = require("chai").expect;
 var assert = require("chai").assert;
-var server = require("../server.js"); // find out a way of starting and stoping the server throug methods
+//var server = require("../server.js"); // find out a way of starting and stoping the server throug methods
 
 describe("Android.me API", function() {
 	describe("/posts/{post_id}", function() {
@@ -90,7 +90,7 @@ describe("Android.me API", function() {
 			it("should ignore any other field beside limit, sort, order, tags, fields, writer, start, end", function(done) {
 				assert.ok(false);
 				done();
-			}
+			});
 		});
 	});
 });
