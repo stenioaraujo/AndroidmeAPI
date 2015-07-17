@@ -1,32 +1,130 @@
 var expect = require("chai").expect;
 var assert = require("chai").assert;
+var http = require("http");
 //var server = require("../server.js"); // find out a way of starting and stoping the server throug methods
 
+// It puts the data streaming together. It works only if the chunk is a object that can be represented as string
+// callback(data)
+function getData(response, callback) {
+	var data = "";
+	
+	response.on("data", function(chunk){
+		data += chunk;
+	}).on("end", function(){
+		callback(data);
+	})
+}
+
 describe("Android.me API", function() {
+  	this.timeout(10*1000);
+  	var fields = ["_id", "content", "date", "featured", "from", "likes", "tags", "time", "title", "writer", "featured_thumbnail", "comments"];
+	
+	beforeEach(function() {
+  		
+		this.options = {
+			hostname: "www.ndroidme.com",
+			port: 8080,
+			method: "GET",
+			path: "/", //It should be changed to each differnt query and path
+			header: {
+				keepAlive: true
+			}
+		};
+		
+	});
+	
 	describe("/posts/{post_id}", function() {
 		it("should only work with get requests", function(done) {
-			assert.ok(false);
-			done();
+			this.options.method = "POST";
+			
+			http.request(this.options, function(res) {
+				expect(res.statusCode).to.be.equal(400);
+				
+				done();
+			}).on("error", function(){
+				expect.fail();
+			}).end();
 		});
 
 		it("should send a JSON response", function(done){
-			assert.ok(false);
-			done();
+			http.request(this.options, function(res){
+				expect(res.headers).to.have.a.property("content-type");
+				expect(res.headers["content-type"]).to.have.string("application/json");
+				
+				done();
+			}).on("error", function(error){
+				console.log(error);
+				expect.fail();
+			}).end();
 		});
 		
 		it("should retrieve the post of a specific ID", function(done) {
-			assert.ok(false);
-			done();
+			this.options.path = "/posts/0";
+			
+			http.request(this.options, function(res){
+				getData(res, function(data){
+					expect(data).to.have.string("<p>Dear user,</p>  <p>We are very proud and extremely happy to introduce you our new website");
+					
+					done();
+				});
+			}).on("error", function() {
+			    expect().fail();
+			}).end();
 		});
 		
 		it("should allow the user to choose the fields that will be sent by the server", function(done) {
-			assert.ok(false);
-			done();
+			this.options.path = "/posts/0?fields=likes,_id";
+			
+			http.request(this.options, function(res){
+				getData(res, function(data){
+					data = JSON.parse(data);
+					
+					expect(data.length).to.be.equal(2);
+					expect(data).to.have.a.property("_id");
+					expect(data).to.have.a.property("likes");
+					
+					done();
+				});
+			}).on("error", function() {
+			    expect.fail();
+			}).end();
 		});
 		
-		it("should ignore any other query beside fields in the request", function(done) {
-			assert.ok(false);
-			done();
+		it("should have in the JSON response at the maximum the fields: " + fields.toString(), function(done) {
+			this.options.path = "/posts/0";
+			http.request(this.options, function(res){
+				getData(res, function(data){
+					data = JSON.parse(data);
+					
+					expect(data.length).to.be.equal(12);
+					
+					for (var i in fields) {
+						expect(data).to.have.a.property(fields[i]);
+					}
+					
+					done();
+				})
+			}).on("error", function(){
+				expect.fail();
+			}).end();
+		});
+		
+		it("should ignore any other query beside the pre-defined fields in the request", function(done) {
+			this.options.path = "/posts/0?fields=likes,content,random_field"
+			
+			http.request(this.options, function(res){
+				getData(res, function(data){
+					data = JSON.parse(data);
+					
+					expect(data.length).to.be.equal(2);
+					expect(data).to.have.a.property("likes");
+					expect(data).to.have.a.property("content");
+					
+					done();
+				})
+			}).on("error", function(){
+				expect.fail();
+			}).end();
 		});
 	});
 	
