@@ -41,7 +41,7 @@ var apiGET = function(req, res, db) {
 			urlQuery.tags = urlQuery.tags.toUpperCase().split(",");
 		
 		var sort = (urlQuery.sort || "time").toLowerCase();
-		var order = +((urlQuery.order.match("-?[1]") || [1])[0]);
+		var order = +((urlQuery.order && urlQuery.order.match("-?[1]") || [1])[0]);
 		var limit = +urlQuery.limit || 9;
 		var start = +urlQuery.start || 0;
 		var end = +urlQuery.end || new Date().getTime();
