@@ -22,7 +22,7 @@ var apiGET = function(req, res, db) {
 		// TO-DO: Implement the qnt_comments
 		// Get post by id, show all the information: _id, title, writer, date, thumbnail_image, image content, tags, likes, qnt_comments, 
 
-		var id = +req.url.match("[0-9]+$")[0];
+		var id = +url.parse(req.url).pathname.match("[0-9]+$")[0];
 		posts.findOne({_id: id}, function(err, post) {
 			post.featured_thumbnail = post.featured;
 			post.featured = post.featured.replace("/", "/large_");
