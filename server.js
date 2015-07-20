@@ -1,4 +1,4 @@
-﻿//Implement tests to this file.
+//Implement tests to this file.
 
 var http = require("http");
 var url = require("url");

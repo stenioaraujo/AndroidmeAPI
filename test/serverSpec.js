@@ -129,7 +129,7 @@ describe("Android.me API", function() {
 	});
 	
 	describe("/posts", function() {
-		it("should return the utilized filters and a collection of posts", function(done) {
+		it("should return the filters and a collection of nine posts for default", function(done) {
 			assert.ok(false);
 			done();
 		});
