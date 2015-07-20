@@ -17,13 +17,23 @@ var parseResponse = function(response, type, object) {
 var apiGET = function(req, res, db) {
 	// Improve the regular expression matches
 	var posts = db.collection("posts");
+	var urlRequest = url.parse(req.url, true);
+	var acceptedFields = {};
+	var options = {}; //the options to the find method
+	
+	if (urlRequest.fields) {
+		for (var field in urlRequest.fields.toLowerCase().split(",")) {
+			acceptedFields[field] = 1;
+		}
+		options["fields"] = acceptedFields;
+	}
 	
 	if (req.url.match("/posts/[0-9]+")) {
 		// TO-DO: Implement the qnt_comments
 		// Get post by id, show all the information: _id, title, writer, date, thumbnail_image, image content, tags, likes, qnt_comments, 
 
-		var id = +url.parse(req.url).pathname.match("[0-9]+$")[0];
-		posts.findOne({_id: id}, function(err, post) {
+		var id = +url.parse(req.url, true).pathname.match("[0-9]+$")[0];
+		posts.findOne({_id: id}, options, function(err, post) {
 			post.featured_thumbnail = post.featured;
 			post.featured = post.featured.replace("/", "/large_");
 			
@@ -35,8 +45,8 @@ var apiGET = function(req, res, db) {
 		// Get a colletion of posts. It should be filtered and sorted by the data received.
 		// The response should have: 
 		//     sort (default time), order default(1 ascending), limit (default 9, max 100), start (default 0), end (default last post date)
-		
-		var urlQuery = url.parse(req.url, true).query;
+
+		var urlQuery = urlRequest.query;
 		if (urlQuery.tags)
 			urlQuery.tags = urlQuery.tags.toUpperCase().split(",");
 		
@@ -61,7 +71,7 @@ var apiGET = function(req, res, db) {
 			});
 		}
 			
-		posts.find({"$and": query}).sort(sorting).limit(limit).toArray(function(err, documents) {
+		posts.find({"$and": query}, options).sort(sorting).limit(limit).toArray(function(err, documents) {
 			var result = new Object();
 			result.sort = sort;
 			result.order = order;
