@@ -73,17 +73,36 @@ describe("Android.me API", function() {
 		});
 		
 		it("should allow the user to choose the fields that will be sent by the server", function(done) {
-			this.options.path = "/posts/0?fields=likes,_id";
+			var dones = 0;
 			
+			this.options.path = "/posts/0?fields=likes,_id";
 			http.request(this.options, function(res){
 				getData(res, function(data){
 					data = JSON.parse(data);
 					
-					expect(data.length).to.be.equal(2);
+					expect(Object.keys(data).length).to.be.equal(2);
 					expect(data).to.have.a.property("_id");
 					expect(data).to.have.a.property("likes");
 					
-					done();
+					if (++dones == 2)
+						done();
+				});
+			}).on("error", function() {
+			    expect.fail();
+			}).end();
+			
+			this.options.path = "/posts?fields=_id";
+			http.request(this.options, function(res){
+				getData(res, function(data){
+					data = JSON.parse(data);
+					
+					for (var i = 0; i < data.posts.length; i++) {
+						expect(Object.keys(data.posts[i]).length).to.be.equal(1);
+						expect(data.posts[i]).to.have.a.property("_id");
+					}
+					
+					if (++dones == 2)
+						done();
 				});
 			}).on("error", function() {
 			    expect.fail();
@@ -91,32 +110,47 @@ describe("Android.me API", function() {
 		});
 		
 		it("should have in the JSON response at the maximum the fields: " + fields.toString(), function(done) {
+			var dones = 0;
+			
 			this.options.path = "/posts/0";
 			http.request(this.options, function(res){
 				getData(res, function(data){
 					data = JSON.parse(data);
 					
-					expect(data.length).to.be.equal(12);
+					expect(Object.keys(data)).to.be.deep.equal(fields);
 					
-					for (var i in fields) {
-						expect(data).to.have.a.property(fields[i]);
+					if (++dones == 2)
+						done();
+				})
+			}).on("error", function(){
+				expect.fail();
+			}).end();
+			
+			this.options.path = "/posts";
+			http.request(this.options, function(res){
+				getData(res, function(data){
+					data = JSON.parse(data);
+					
+					for (var i = 0; i < data.posts.length; i++) {
+						expect(Object.keys(data.posts[i])).to.be.deep.equal(fields);
 					}
 					
-					done();
+					if (++dones == 2)
+						done();
 				})
 			}).on("error", function(){
 				expect.fail();
 			}).end();
 		});
 		
-		it("should ignore any other query beside the pre-defined fields in the request", function(done) {
+		it("should ignore any other query beside the defined fields in the request", function(done) {
 			this.options.path = "/posts/0?fields=likes,content,random_field"
 			
 			http.request(this.options, function(res){
 				getData(res, function(data){
 					data = JSON.parse(data);
 					
-					expect(data.length).to.be.equal(2);
+					expect(Object.keys(data).length).to.be.equal(2);
 					expect(data).to.have.a.property("likes");
 					expect(data).to.have.a.property("content");
 					
