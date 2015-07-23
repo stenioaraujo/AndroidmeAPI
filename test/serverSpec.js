@@ -18,6 +18,7 @@ function getData(response, callback) {
 describe("Android.me API", function() {
   	this.timeout(10*1000);
   	var fields = ["_id", "content", "date", "featured", "from", "likes", "tags", "time", "title", "writer", "featured_thumbnail", "comments"];
+	var defaultFilters = ["sort", "order", "imit", "start", "writer", "tags"];
 	
 	beforeEach(function() {
   		
@@ -144,7 +145,7 @@ describe("Android.me API", function() {
 		});
 		
 		it("should ignore any other query beside the defined fields in the request", function(done) {
-			this.options.path = "/posts/0?fields=likes,content,random_field"
+			this.options.path = "/posts/0?sort=date&limit=2&fields=likes,_id"
 			
 			http.request(this.options, function(res){
 				getData(res, function(data){
@@ -152,7 +153,7 @@ describe("Android.me API", function() {
 					
 					expect(Object.keys(data).length).to.be.equal(2);
 					expect(data).to.have.a.property("likes");
-					expect(data).to.have.a.property("content");
+					expect(data).to.have.a.property("_id");
 					
 					done();
 				})
@@ -164,20 +165,71 @@ describe("Android.me API", function() {
 	
 	describe("/posts", function() {
 		it("should return the filters and a collection of nine posts for default", function(done) {
-			assert.ok(false);
-			done();
+			this.options.path = "/posts"
+			
+			http.request(this.options, function(res){
+				getData(res, function(data){
+					data = JSON.parse(data);
+					for (var i in this.defaultFilters) {
+						expect(data).to.have.a.property(this.defaultFilters[i]);
+					}
+					
+					expect(data.posts.length).to.be.equal(9);
+					
+					done();
+				});
+			}).on("error", function(){
+				expect.fail();
+			}).end();
 		});
 		
 		describe("Queries", function() {
 			describe("Limit", function() {
 				it("should be limited by 100 posts maximum", function(done) {
-					assert.ok(false);
-					done();
+					this.options.path = "/posts?limit=200";
+					
+					http.request(this.options, function(res){
+						getData(res, function(data) {
+							data = JSON.parse(data);
+							
+							expect(data.posts.length).to.be.equal(100);
+							done();
+						});
+					}).on("error", function(err) {
+						expect.fail();
+					}).end();
 				});
 				
 				it ("should return 9 if 0 or a negative number is passed", function(done) {
-					assert.ok(false);
-					done();
+					var dones = 0;
+					
+					this.options.path = "/posts?limit=0";
+					http.request(this.options, function(res){
+						getData(res, function(data) {
+							data = JSON.parse(data);
+							
+							expect(data.posts.length).to.be.equal(9);
+							
+							if (++dones == 2)
+								done();
+						});
+					}).on("error", function() {
+						expect.fail();
+					}).end();
+					
+					this.options.path = "/posts?limit=-10";
+					http.request(this.options, function(res){
+						getData(res, function(data) {
+							data = JSON.parse(data);
+							
+							expect(data.posts.length).to.be.equal(9);
+							
+							if (++dones == 0)
+								done();
+						});
+					}).on("error", function() {
+						expect.fail();
+					}).end();
 				});
 			});
 			
