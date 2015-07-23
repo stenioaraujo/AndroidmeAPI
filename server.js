@@ -14,6 +14,13 @@ var parseResponse = function(response, type, object) {
 	}
 }
 
+var addThumbnail = function (post) {
+	if (post.featured !== undefined) {
+                post.featured_thumbnail = post.featured;
+		post.featured = post.featured !== "" ? post.featured.replace("/", "/large_") : "";
+	}
+}
+
 var apiGET = function(req, res, db) {
 	// Improve the regular expression matches
 	var posts = db.collection("posts");
@@ -22,8 +29,11 @@ var apiGET = function(req, res, db) {
 	var options = {}; //the options to the find method
 	
 	if (urlRequest.query.fields) {
-		for (var field in urlRequest.query.fields.toLowerCase().split(",")) {
-			acceptedFields[field] = 1;
+		var fields = urlRequest.query.fields.toLowerCase().split(",");
+
+		acceptedFields["_id"] = 0; // for default it always is shown. In this API it is only show if the user specify
+		for (var i = 0; i < fields.length; i++) {
+			acceptedFields[fields[i]] = 1;
 		}
 		options["fields"] = acceptedFields;
 	}
@@ -31,12 +41,11 @@ var apiGET = function(req, res, db) {
 	if (req.url.match("/posts/[0-9]+")) {
 		// TO-DO: Implement the qnt_comments
 		// Get post by id, show all the information: _id, title, writer, date, thumbnail_image, image content, tags, likes, qnt_comments, 
-
+		
 		var id = +url.parse(req.url, true).pathname.match("[0-9]+$")[0];
 		posts.findOne({_id: id}, options, function(err, post) {
-			post.featured_thumbnail = post.featured;
-			post.featured = post.featured.replace("/", "/large_");
-			
+			addThumbnail(post);
+
 			parseResponse(res, "json", post);
 		});
 	} else if (req.url.match("^/posts\??")) {
@@ -78,6 +87,11 @@ var apiGET = function(req, res, db) {
 			result.limit = limit;
 			result.start = start;
 			result.end = end;
+
+			for (var i = 0 ; i < documents.length; i++) {
+				addThumbnail(documents[i]);
+			}
+
 			result.posts = documents;
 			
 			parseResponse(res, "json", result);
