@@ -21,8 +21,8 @@ var apiGET = function(req, res, db) {
 	var acceptedFields = {};
 	var options = {}; //the options to the find method
 	
-	if (urlRequest.fields) {
-		for (var field in urlRequest.fields.toLowerCase().split(",")) {
+	if (urlRequest.query.fields) {
+		for (var field in urlRequest.query.fields.toLowerCase().split(",")) {
 			acceptedFields[field] = 1;
 		}
 		options["fields"] = acceptedFields;
