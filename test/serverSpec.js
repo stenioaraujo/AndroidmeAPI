@@ -234,46 +234,181 @@ describe("Android.me API", function() {
 			});
 			
 			describe("Sort and Order", function() {
-				it("should sort by ID if a invalid field is described in sort.", function(done) {
-					assert.ok(false);
-					done();
+				it("should sort by time if a invalid field is described in sort.", function(done) {
+					this.options.path = "/posts?sort=stenio";
+					
+					http.request(this.options, function(res){
+						getData(res, function(data) {
+							data = JSON.parse(data);
+							
+							var previous = -1;
+							for (var i in data.posts) {
+								if (+data.posts[i].time > previous) {
+									previous = +data.posts[i].time;
+								} else {
+									expect.fail();
+								}
+							}
+							
+							done();
+						});
+					}).on("error", function(){
+						expect.fail();
+					}).end();
 				});
 			
 				it("should sort by the sort field.", function(done) {
-					assert.ok(false);
-					done();
+					this.options.path = "/posts?sort=_id";
+					
+					http.request(this.options, function(res){
+						getData(res, function(data) {
+							data = JSON.parse(data);
+							
+							var previous = -1;
+							for (var i in data.posts) {
+								if (+data.posts[i]._id > previous) {
+									previous = +data.posts[i]._id;
+								} else {
+									expect.fail();
+								}
+							}
+							
+							done();
+						});
+					}).on("error", function(){
+						expect.fail();
+					}).end();
 				});
 			
 				it("should have the order ascending if order is equal to 1", function(done) {
-					assert.ok(false);
-					done();
+					this.options.path = "/posts?order=1";
+					
+					http.request(this.options, function(res){
+						getData(res, function(data) {
+							data = JSON.parse(data);
+							
+							var previous = -1;
+							for (var i in data.posts) {
+								if (+data.posts[i].time > previous) {
+									previous = +data.posts[i].time;
+								} else {
+									expect.fail();
+								}
+							}
+							
+							done();
+						});
+					}).on("error", function(){
+						expect.fail();
+					}).end();
 				});
 			
 				it("should have the order descending if order is equal to -1", function(done) {
-					assert.ok(false);
-					done();
+					this.options.path = "/posts?order=-1";
+					
+					http.request(this.options, function(res){
+						getData(res, function(data) {
+							data = JSON.parse(data);
+							
+							var previous = -1;
+							for (var i = data.posts.length - 1; i >= 0; i--) {
+								if (+data.posts[i].time > previous) {
+									previous = +data.posts[i].time;
+								} else {
+									expect.fail();
+								}
+							}
+							
+							done();
+						});
+					}).on("error", function(){
+						expect.fail();
+					}).end();
 				});
 			
 				it("should have the order ascending (1) if any other value is passed", function(done) {
-					assert.ok(false);
-					done();
+					this.options.path = "/posts?order=stenio";
+					
+					http.request(this.options, function(res){
+						getData(res, function(data) {
+							data = JSON.parse(data);
+							
+							var previous = -1;
+							for (var i in data.posts) {
+								if (+data.posts[i].time > previous) {
+									previous = +data.posts[i].time;
+								} else {
+									expect.fail();
+								}
+							}
+							
+							done();
+						});
+					}).on("error", function(){
+						expect.fail();
+					}).end();
 				});
 			
 			});
 			
-			it("should return any tag if none tag was passed", function(done) {
-				assert.ok(false);
-				done();
-			});
-			
-			it("should return only the posts that have all the tags passed included.", function(done) {
-				assert.ok(false);
-				done();
-			});
-			
-			it("should ignore any other field beside limit, sort, order, tags, fields, writer, start, end", function(done) {
-				assert.ok(false);
-				done();
+			describe("Tags", function() {
+				it("should return any tag if none tag was passed", function(done) {
+					this.options.path = "/posts";
+					
+					http.request(this.options, function(res) {
+						getData(res, function(data) {
+							data = JSON.parse(data);
+							
+							var b;
+							// For every post
+							for (var i in data.posts) {
+								// verify if any other post
+								for (var j in data.posts) {
+									// Doesn't have a tag
+									for (var k in data.posts[j].tags) {
+										// That matches with any other post's tags
+										b = true; // It means none match was found.
+										for (var l in data.posts[i].tags) {
+											if (data.posts[j].tags[k] === data.posts[i].tags[l]) {
+												b = false;
+												break;
+											}
+										}
+										if (b)
+											break;
+									}
+									if (b) 
+										break;
+								}
+								if (b)
+									break;
+							}
+							if (b)
+								done();
+							else
+								expect.fail();
+						});
+					}).on("error", function(){
+						expect.fail();
+					}).end();
+				});
+				
+				it("should return only the posts that have all the tags passed included.", function(done) {
+					this.options.path = "/posts?tags=GOOGLE,UPDATE";
+					
+					http.request(this.options, function(res){
+						getData(res, function(data){
+							data = JSON.parse(data);
+							
+							for (var j in data.posts)
+								expect(data.posts[j].tags).to.contain.members(["GOOGLE", "UPDATE"]);
+								
+							done();
+						});
+					}).on("error", function(){
+						expect.fail();
+					}).end();
+				});
 			});
 		});
 	});
