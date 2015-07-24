@@ -59,7 +59,11 @@ var apiGET = function(req, res, db) {
 		if (urlQuery.tags)
 			urlQuery.tags = urlQuery.tags.toUpperCase().split(",");
 		
-		var sort = (urlQuery.sort || "time").toLowerCase();
+		var fields = ["_id", "content", "date", "featured", "from", "likes", "tags", "time", "title", "writer", "featured_thumbnail", "comments"];
+		
+		var sort = "time";
+		if (urlQuery.sort)
+			sort = fields.indexOf(urlQuery.sort.toLowerCase()) !== -1 ? urlQuery.sort.toLowerCase() : sort;
 		var order = +((urlQuery.order && urlQuery.order.match("-?[1]") || [1])[0]);
 		var limit = +urlQuery.limit > 0 ? +urlQuery.limit : 9; limit = limit > 100 ? 100 : limit;
 		var start = +urlQuery.start || 0;
