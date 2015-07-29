@@ -359,31 +359,31 @@ describe("Android.me API", function() {
 						getData(res, function(data) {
 							data = JSON.parse(data);
 							
-							var b;
+							var m;
 							// For every post
 							for (var i in data.posts) {
 								// verify if any other post
 								for (var j in data.posts) {
 									// Doesn't have a tag
+									m = false; // It means none match was found.
 									for (var k in data.posts[j].tags) {
 										// That matches with any other post's tags
-										b = true; // It means none match was found.
 										for (var l in data.posts[i].tags) {
 											if (data.posts[j].tags[k] === data.posts[i].tags[l]) {
-												b = false;
+												m = true;
 												break;
 											}
 										}
-										if (b)
+										if (m)
 											break;
 									}
-									if (b) 
+									if (!m) 
 										break;
 								}
-								if (b)
+								if (!m)
 									break;
 							}
-							if (b)
+							if (!m)
 								done();
 							else
 								expect.fail();
