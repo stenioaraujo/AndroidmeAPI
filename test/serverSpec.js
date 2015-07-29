@@ -16,7 +16,7 @@ function getData(response, callback) {
 }
 
 describe("Android.me API", function() {
-  	this.timeout(10*1000);
+  	this.timeout(20*1000);
   	var fields = ["_id", "content", "date", "featured", "from", "likes", "tags", "time", "title", "writer", "featured_thumbnail", "comments"];
 	var defaultFilters = ["sort", "order", "imit", "start", "writer", "tags"];
 	
@@ -118,7 +118,7 @@ describe("Android.me API", function() {
 				getData(res, function(data){
 					data = JSON.parse(data);
 					
-					expect(Object.keys(data)).to.be.deep.equal(fields);
+					expect(Object.keys(data)).to.have.members(fields);
 					
 					if (++dones == 2)
 						done();
@@ -133,7 +133,7 @@ describe("Android.me API", function() {
 					data = JSON.parse(data);
 					
 					for (var i = 0; i < data.posts.length; i++) {
-						expect(Object.keys(data.posts[i])).to.be.deep.equal(fields);
+						expect(Object.keys(data.posts[i])).to.have.members(fields);
 					}
 					
 					if (++dones == 2)
@@ -224,7 +224,7 @@ describe("Android.me API", function() {
 							
 							expect(data.posts.length).to.be.equal(9);
 							
-							if (++dones == 0)
+							if (++dones == 2)
 								done();
 						});
 					}).on("error", function() {
