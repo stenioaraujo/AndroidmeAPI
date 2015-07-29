@@ -1,6 +1,7 @@
 //Implement tests to this file.
 
 var http = require("http");
+var https = require("https");
 var url = require("url");
 var mongo = require("mongodb").MongoClient;
 
@@ -21,6 +22,31 @@ var addThumbnail = function (post) {
 	}
 }
 
+// It puts the data streaming together. It works only if the chunk is a object that can be represented as string
+// callback(data)
+var getData = function (response, callback) {
+	var data = "";
+	
+	response.on("data", function(chunk){
+		data += chunk;
+	}).on("end", function(){
+		callback(data);
+	})
+}
+
+// post is an element in an array. If it is changed the array therefore will be changed.
+var addComments = function(post, callback) {
+	https.request("https://disqus.com/api/3.0/threads/listPosts.json?forum=droidme&api_key=bMJIKpzdru3dfTmSA02QcGe55tvIlR28tLfS80BiqBmSdbUzNTMo105CmvRweUgN&thread=link:http://ndroidme.com/news.php?article=" + post._id, function(response) {
+		getData(response, function(data) {
+			data = JSON.parse(data);
+			
+			post.comments = data.response.length;
+			
+			callback(post);
+		});
+	}).on("error", function(){}).end();
+}
+
 var apiGET = function(req, res, db) {
 	// Improve the regular expression matches
 	var posts = db.collection("posts");
@@ -39,14 +65,21 @@ var apiGET = function(req, res, db) {
 	}
 	
 	if (req.url.match("/posts/[0-9]+")) {
-		// TO-DO: Implement the qnt_comments
+		// TO-DO: Implement the comments
 		// Get post by id, show all the information: _id, title, writer, date, thumbnail_image, image content, tags, likes, qnt_comments, 
 		
 		var id = +url.parse(req.url, true).pathname.match("[0-9]+$")[0];
 		posts.findOne({_id: id}, options, function(err, post) {
 			addThumbnail(post);
+			
+			if (options.fields && options.fields.comments === undefined) {
+				parseResponse(res, "json", post);
+			} else {
+				addComments(post, function(post){
+					parseResponse(res, "json", post);
+				});
+			}
 
-			parseResponse(res, "json", post);
 		});
 	} else if (req.url.match("^/posts\??")) {
 		// TO-DO: Implement the validation of the requests. only some words are acceptable
@@ -91,14 +124,25 @@ var apiGET = function(req, res, db) {
 			result.limit = limit;
 			result.start = start;
 			result.end = end;
-
-			for (var i = 0 ; i < documents.length; i++) {
-				addThumbnail(documents[i]);
-			}
-
 			result.posts = documents;
 			
-			parseResponse(res, "json", result);
+			
+			var commCount = 0;
+			for (var i = 0 ; i < documents.length; i++) {
+				addThumbnail(documents[i]);
+			
+				if (options.fields && options.fields.comments === undefined) {
+					continue;
+				} else {
+					addComments(result.posts[i], function(){
+						if (++commCount == documents.length)
+							parseResponse(res, "json", result);
+					});
+				}
+			}
+			
+			if (options.fields && options.fields.comments === undefined)
+				parseResponse(res, "json", result);
 		});
 	} else {
 		res.statusCode = 400;
@@ -106,7 +150,7 @@ var apiGET = function(req, res, db) {
 	}
 }
 
-// The the server starts is inside the db starts because otherwise it would be necessary to connect the database each time a client connect to the server.
+// The server start is inside the db start because otherwise it would be necessary to connect the database each time a client connect to the server.
 // process.argv[3] is the second argument when one starts the script.
 var mongoServer = process.argv[3] ? process.argv[3] : "mongodb://localhost:27017/posts";
 mongo.connect(mongoServer, function(err, db) {
