@@ -17,7 +17,7 @@ function getData(response, callback) {
 
 describe("Android.me API", function() {
   	this.timeout(20*1000);
-  	var fields = ["_id", "content", "date", "featured", "from", "likes", "tags", "time", "title", "writer", "featured_thumbnail", "comments"];
+  	var fields = ["_id", "content", "date", "featured", "from", "likes", "tags", "time", "title", "writer", "featured_thumbnail", "comments", "cache_expires"];
 	var defaultFilters = ["sort", "order", "imit", "start", "writer", "tags"];
 	
 	beforeEach(function() {
