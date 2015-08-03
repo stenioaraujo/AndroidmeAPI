@@ -54,7 +54,6 @@ describe("Android.me API", function() {
 				
 				done();
 			}).on("error", function(error){
-				console.log(error);
 				expect.fail();
 			}).end();
 		});
