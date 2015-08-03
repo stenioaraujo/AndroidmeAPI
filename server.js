@@ -8,6 +8,7 @@ var mongo = require("mongodb").MongoClient;
 var parseResponse = function(response, type, object) {
 	if ("json") {
 		response.setHeader("Content-Type", "application/json; charset=utf-8");
+		response.setHeader("Cache-Control", "max-age=1800");
 		
 		response.end(JSON.stringify(object));
 	} else {
@@ -16,7 +17,7 @@ var parseResponse = function(response, type, object) {
 }
 
 var addThumbnail = function (post) {
-	if (post.featured !== undefined) {
+	if (post.featured_thumbnail === undefined && post.featured !== undefined) {
                 post.featured_thumbnail = post.featured;
 		post.featured = post.featured !== "" ? post.featured.replace("/", "/large_") : "";
 	}
@@ -61,6 +62,7 @@ var apiGET = function(req, res, db) {
 		for (var i = 0; i < fields.length; i++) {
 			acceptedFields[fields[i]] = 1;
 		}
+		
 		options["fields"] = acceptedFields;
 	}
 	
@@ -70,14 +72,23 @@ var apiGET = function(req, res, db) {
 		
 		var id = +url.parse(req.url, true).pathname.match("[0-9]+$")[0];
 		posts.findOne({_id: id}, options, function(err, post) {
+			if (err) {
+				console.error(err);
+				res.statusCode = 500;
+				parseResponse(res, "json", {error: "It was not possible to retrieve the post(s)."})
+				return;
+			}
+			
 			addThumbnail(post);
 			
-			if (options.fields && options.fields.comments === undefined) {
-				parseResponse(res, "json", post);
-			} else {
+			if (!(options.fields && options.fields.comments === undefined) &&
+				 (post.comments === undefined || new Date().getTime() > +post.cache_expires)) {
 				addComments(post, function(post){
-					parseResponse(res, "json", post);
+					posts.updateOne({_id: post._id}, {$set:{comments: post.comments, cache_expires: new Date().getTime() + 30*60*1000}});
+					parseResponse(res, "json", post); // It doesn't need to wait the response from the database
 				});
+			} else {
+				parseResponse(res, "json", post);
 			}
 
 		});
@@ -118,6 +129,13 @@ var apiGET = function(req, res, db) {
 		}
 			
 		posts.find({"$and": query}, options).sort(sorting).limit(limit).toArray(function(err, documents) {
+			if (err) {
+				console.error(err);
+				res.statusCode = 500;
+				parseResponse(res, "json", {error: "It was not possible to retrieve the post(s)."})
+				return;
+			}
+			
 			var result = new Object();
 			result.sort = sort;
 			result.order = order;
@@ -130,14 +148,16 @@ var apiGET = function(req, res, db) {
 			var commCount = 0;
 			for (var i = 0 ; i < documents.length; i++) {
 				addThumbnail(documents[i]);
-			
-				if (options.fields && options.fields.comments === undefined) {
-					continue;
-				} else {
-					addComments(result.posts[i], function(){
+				
+				if (!(options.fields && options.fields.comments === undefined) &&
+					 (result.posts[i].comments === undefined || new Date().getTime() > +result.posts[i].cache_expires)) {
+					addComments(result.posts[i], function(post){
+						posts.updateOne({_id: post._id}, {$set:{comments: post.comments, cache_expires: new Date().getTime() + 30*60*1000}});
 						if (++commCount == documents.length)
-							parseResponse(res, "json", result);
+							parseResponse(res, "json", result); // It doesn't need to wait the response from the database
 					});
+				} else {
+					continue;
 				}
 			}
 			
