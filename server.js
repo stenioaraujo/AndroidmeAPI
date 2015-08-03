@@ -81,7 +81,7 @@ var apiGET = function(req, res, db) {
 			
 			addThumbnail(post);
 			
-			if (!(options.fields && options.fields.comments === undefined) &&
+			if (options.fields && options.fields.comments &&
 				 (post.comments === undefined || new Date().getTime() > +post.cache_expires)) {
 				addComments(post, function(post){
 					posts.updateOne({_id: post._id}, {$set:{comments: post.comments, cache_expires: new Date().getTime() + 30*60*1000}});
@@ -149,7 +149,7 @@ var apiGET = function(req, res, db) {
 			for (var i = 0 ; i < documents.length; i++) {
 				addThumbnail(documents[i]);
 				
-				if (!(options.fields && options.fields.comments === undefined) &&
+				if (options.fields && options.fields.comments &&
 					 (result.posts[i].comments === undefined || new Date().getTime() > +result.posts[i].cache_expires)) {
 					addComments(result.posts[i], function(post){
 						posts.updateOne({_id: post._id}, {$set:{comments: post.comments, cache_expires: new Date().getTime() + 30*60*1000}});
@@ -161,7 +161,7 @@ var apiGET = function(req, res, db) {
 				}
 			}
 			
-			if (options.fields && options.fields.comments === undefined)
+			if (commCount === 0)
 				parseResponse(res, "json", result);
 		});
 	} else {
