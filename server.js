@@ -59,7 +59,8 @@ var apiGET = function(req, res, db) {
 	if (urlRequest.query.fields) {
 		var fields = urlRequest.query.fields.toLowerCase().split(",");
 
-		acceptedFields["_id"] = 0; // for default it always is shown. In this API it is only show if the user specify
+		acceptedFields["_id"] = 1; // It is necessary. The user always will receive both
+		acceptedFields["cache_expires"] = 1; // It is necessary
 		for (var i = 0; i < fields.length; i++) {
 			acceptedFields[fields[i]] = 1;
 		}
@@ -86,10 +87,11 @@ var apiGET = function(req, res, db) {
 				&& (!post.cache_expires || new Date().getTime() > +post.cache_expires)) {
 				addComments(post, function(post){
 					posts.updateOne({_id: post._id}, {$set:{comments: post.comments, cache_expires: new Date().getTime() + 30*60*1000}});
+
 					parseResponse(res, "json", post); // It doesn't need to wait the response from the database
 				});
 				
-			} else {
+			} else {				
 				parseResponse(res, "json", post);
 			}
 
@@ -167,8 +169,8 @@ var apiGET = function(req, res, db) {
 					
 				} else {
 					continue;
-				} --postCount;
-			}
+				}
+			} --postCount;
 			
 			if (notUpdated) 
 				parseResponse(res, "json", result);
