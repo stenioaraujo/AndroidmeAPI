@@ -72,17 +72,19 @@ describe("Android.me API", function() {
 			}).end();
 		});
 		
-		it("should allow the user to choose the fields that will be sent by the server", function(done) {
+		it("should allow the user to choose the fields that will be sent by the server. Except the fields _id and cache_expires", function(done) {
 			var dones = 0;
 			
-			this.options.path = "/posts/0?fields=likes,_id";
+			this.options.path = "/posts/0?fields=likes,comments";
 			http.request(this.options, function(res){
 				getData(res, function(data){
 					data = JSON.parse(data);
 					
-					expect(Object.keys(data).length).to.be.equal(2);
+					expect(Object.keys(data).length).to.be.equal(4);
 					expect(data).to.have.a.property("_id");
 					expect(data).to.have.a.property("likes");
+					expect(data).to.have.a.property("comments");
+					expect(data).to.have.a.property("cache_expires");
 					
 					if (++dones == 2)
 						done();
@@ -97,8 +99,9 @@ describe("Android.me API", function() {
 					data = JSON.parse(data);
 					
 					for (var i = 0; i < data.posts.length; i++) {
-						expect(Object.keys(data.posts[i]).length).to.be.equal(1);
+						expect(Object.keys(data.posts[i]).length).to.be.equal(2);
 						expect(data.posts[i]).to.have.a.property("_id");
+						expect(data.posts[i]).to.have.a.property("cache_expires");
 					}
 					
 					if (++dones == 2)
@@ -143,15 +146,16 @@ describe("Android.me API", function() {
 			}).end();
 		});
 		
-		it("should ignore any other query beside the defined fields in the request", function(done) {
-			this.options.path = "/posts/0?sort=date&limit=2&fields=likes,_id"
+		it("should ignore any other query beside the defined fields in the request and the necessary fields (_id, cache_expires)", function(done) {
+			this.options.path = "/posts/0?sort=date&limit=2&fields=likes"
 			
 			http.request(this.options, function(res){
 				getData(res, function(data){
 					data = JSON.parse(data);
 					
-					expect(Object.keys(data).length).to.be.equal(2);
+					expect(Object.keys(data).length).to.be.equal(3);
 					expect(data).to.have.a.property("likes");
+					expect(data).to.have.a.property("cache_expires");
 					expect(data).to.have.a.property("_id");
 					
 					done();
