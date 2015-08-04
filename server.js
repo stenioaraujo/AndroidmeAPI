@@ -41,7 +41,8 @@ var addComments = function(post, callback) {
 		getData(response, function(data) {
 			data = JSON.parse(data);
 			
-			post.comments = data.response.length;
+			if (data.response.length !== 103) // If it is not an disqus error
+				post.comments = data.response.length;
 			
 			callback(post);
 		});
@@ -81,12 +82,13 @@ var apiGET = function(req, res, db) {
 			
 			addThumbnail(post);
 			
-			if (options.fields && options.fields.comments &&
-				 (post.comments === undefined || new Date().getTime() > +post.cache_expires)) {
+			if ((!options.fields || options.fields.comments)
+				&& (!post.cache_expires || new Date().getTime() > +post.cache_expires)) {
 				addComments(post, function(post){
 					posts.updateOne({_id: post._id}, {$set:{comments: post.comments, cache_expires: new Date().getTime() + 30*60*1000}});
 					parseResponse(res, "json", post); // It doesn't need to wait the response from the database
 				});
+				
 			} else {
 				parseResponse(res, "json", post);
 			}
@@ -145,23 +147,30 @@ var apiGET = function(req, res, db) {
 			result.posts = documents;
 			
 			
-			var commCount = 0;
+			var postCount = 1; // it starts in 1 because it is ALMOST impossible to be equal updatedPosts at the first iteration.
+			var updatedPosts = 0;
+			var notUpdated = true;
 			for (var i = 0 ; i < documents.length; i++) {
 				addThumbnail(documents[i]);
 				
-				if (options.fields && options.fields.comments &&
-					 (result.posts[i].comments === undefined || new Date().getTime() > +result.posts[i].cache_expires)) {
+				if ((!options.fields || options.fields.comments)
+				&& (!result.posts[i].cache_expires || new Date().getTime() > +result.posts[i].cache_expires)) {
+					notUpdated = false;
+					
+					++postCount; // it counts how many posts need to be updated.
+					
 					addComments(result.posts[i], function(post){
 						posts.updateOne({_id: post._id}, {$set:{comments: post.comments, cache_expires: new Date().getTime() + 30*60*1000}});
-						if (++commCount == documents.length)
+						if (postCount == ++updatedPosts)
 							parseResponse(res, "json", result); // It doesn't need to wait the response from the database
 					});
+					
 				} else {
 					continue;
-				}
+				} --postCount;
 			}
 			
-			if (commCount === 0)
+			if (notUpdated) 
 				parseResponse(res, "json", result);
 		});
 	} else {
